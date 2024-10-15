@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "astropathways/server.js",
+      "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)", 
-      "dest": "astropathways/server.js"
+      "src": "/api/(.*)",
+      "dest": "server.js"
     }
   ]
 }
