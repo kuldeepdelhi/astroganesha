@@ -1,1 +1,15 @@
-{ "rewrites": [ { "source": "/(.*)", "destination": "/" } ] }
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "astropathways/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)", 
+      "dest": "astropathways/server.js"
+    }
+  ]
+}
