@@ -96,7 +96,7 @@ router.post('/login', async (req, res) => {
   res.status(200).json({ message: 'Login successful', token });
 });
 
-// Forgot Password Route - Generates Reset Token
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
@@ -110,7 +110,7 @@ router.post('/forgot-password', async (req, res) => {
     const resetToken = crypto.randomBytes(20).toString('hex');
     const resetTokenExpiry = Date.now() + 3600000; // 1-hour expiry
 
-    // Update user with reset token and expiry
+  
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpiry = resetTokenExpiry;
     await user.save();
