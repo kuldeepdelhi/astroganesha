@@ -115,8 +115,8 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpiry = resetTokenExpiry;
     await user.save();
 
-    // Send the email with the reset link
-    const resetLink = `https://astropathways.com/reset-password?token=${resetToken}`;
+    
+    const resetLink = `https://astropathways.com/resetPassword?token=${resetToken}`;
     const mailOptions = {
       to: email,
       from: 'raman12106@gmail.com',
@@ -137,21 +137,21 @@ router.post('/resetPassword', async (req, res) => {
   const { token, newPassword } = req.body;
 
   try {
-    // Find user by reset token and check if token is expired
+  
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpiry: { $gt: Date.now() }, // Check if token has expired
+      resetPasswordExpiry: { $gt: Date.now() }, 
     });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
-    // Hash the new password and save it
+   
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     
-    // Clear the reset token fields after password update
+    
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
     await user.save();
