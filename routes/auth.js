@@ -173,15 +173,12 @@ router.post('/enroll', async (req, res) => {
       await user.save();
     }
 
-    // Check if the user is already enrolled in the same course
     const existingEnrollment = await CourseEnrollment.findOne({ userId: user._id, courseName });
     if (existingEnrollment) {
-      // If already enrolled, create a token and send it back
       const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.status(200).json({ message: 'User already enrolled, session created', token });
     }
 
-    // Save course enrollment details
     const newEnrollment = new CourseEnrollment({
       userId: user._id,
       courseName,
@@ -190,7 +187,6 @@ router.post('/enroll', async (req, res) => {
     });
     await newEnrollment.save();
 
-    // Generate a token for the newly created user
     const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
     
     return res.status(200).json({ message: 'Enrollment successful', user, token });

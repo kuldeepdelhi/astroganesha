@@ -16,7 +16,6 @@ const courseEnrollmentSchema = new mongoose.Schema({
   },
   registrationAmount: {
     type: Number,
-    required: true,
   },
   enrolledAt: {
     type: Date,
