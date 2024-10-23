@@ -47,7 +47,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer'); // For sending emails
 const router = express.Router();
-const CourseEnrollment = require('../models/CourseEnrollment'); // Ensure you import your CourseEnrollment model
+const CourseEnrollment = require('../models/CourseEnrollment'); 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const RESET_TOKEN_SECRET = process.env.RESET_TOKEN_SECRET || 'your_reset_token_secret';
 
@@ -202,5 +202,27 @@ router.post('/enroll', async (req, res) => {
     res.status(500).json({ message: 'Error enrolling user', error });
   }
 });
+// Check if user already exists by email
+router.get('/enroll', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(200).json({ exists: true }); // User exists
+    } else {
+      return res.status(404).json({ exists: false }); // User does not exist
+    }
+  } catch (error) {
+    console.error('Error checking user existence:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 
 module.exports = router;
