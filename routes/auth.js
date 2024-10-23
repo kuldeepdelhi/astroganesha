@@ -47,7 +47,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer'); // For sending emails
 const router = express.Router();
-
+const CourseEnrollment = require('../models/CourseEnrollment'); // Ensure you import your CourseEnrollment model
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const RESET_TOKEN_SECRET = process.env.RESET_TOKEN_SECRET || 'your_reset_token_secret';
 
@@ -159,5 +159,48 @@ router.post('/resetPassword', async (req, res) => {
     res.status(500).json({ message: 'Error resetting password', error });
   }
 });
-module.exports = router;
 
+// ENROLLMENT CHECK AND SAVE
+router.post('/enroll', async (req, res) => {
+  const { name, email, phone, courseName, courseAmount, registrationAmount } = req.body;
+
+  try {
+    // Check if the user already exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // If the user doesn't exist, create a new user
+      const hashedPassword = await bcrypt.hash('default-password', 10); // Hash a default password
+      user = new User({ fullName: name, email, phone, password: hashedPassword });
+      await user.save();
+    }
+
+    // Check if the user is already enrolled in the same course
+    const existingEnrollment = await CourseEnrollment.findOne({ userId: user._id, courseName });
+    if (existingEnrollment) {
+      return res.status(400).json({ message: 'User is already enrolled in this course' });
+    }
+
+    // Save course enrollment details in CourseEnrollment collection
+    const newEnrollment = new CourseEnrollment({
+      userId: user._id,
+      courseName,
+      courseAmount,
+      registrationAmount,
+    });
+    await newEnrollment.save();
+
+    // Log the user in (create a JWT token)
+    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+
+    return res.status(200).json({
+      message: 'Enrollment successful, proceed to payment',
+      token,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error enrolling user', error });
+  }
+});
+
+module.exports = router;
