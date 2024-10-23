@@ -166,6 +166,7 @@ router.post('/enroll', async (req, res) => {
   try {
     let user = await User.findOne({ email });
 
+    
     if (!user) {
       const hashedPassword = await bcrypt.hash('default-password', 10);
       user = new User({ fullName: name, email, phone, password: hashedPassword });
@@ -175,7 +176,9 @@ router.post('/enroll', async (req, res) => {
     // Check if the user is already enrolled in the same course
     const existingEnrollment = await CourseEnrollment.findOne({ userId: user._id, courseName });
     if (existingEnrollment) {
-      return res.status(400).json({ message: 'User is already enrolled in this course' });
+      // If already enrolled, create a token and send it back
+      const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.status(200).json({ message: 'User already enrolled, session created', token });
     }
 
     // Save course enrollment details
@@ -187,11 +190,16 @@ router.post('/enroll', async (req, res) => {
     });
     await newEnrollment.save();
 
-    return res.status(200).json({ message: 'Enrollment successful', user });
+    // Generate a token for the newly created user
+    const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
+    return res.status(200).json({ message: 'Enrollment successful', user, token });
   } catch (error) {
+    console.error('Error enrolling user:', error);
     res.status(500).json({ message: 'Error enrolling user', error });
   }
 });
+
 
 // Check if user already exists by email
 router.get('/enroll', async (req, res) => {
