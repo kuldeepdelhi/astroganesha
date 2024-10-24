@@ -26,21 +26,17 @@ const userSchema = new mongoose.Schema({
     type: Date,
   },
 });
-// Password hashing middleware
+
 userSchema.pre('save', async function (next) {
   if (this.isModified('password') || this.isNew) {
-    try {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    } catch (error) {
-      return next(error); // Handle errors during hashing
-    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   }
   next();
 });
 
-// Password comparison method
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
+
 module.exports = mongoose.model('User', userSchema);

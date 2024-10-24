@@ -81,23 +81,18 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(200).json({ message: 'Login successful', token });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login', error });
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(400).json({ message: 'User not found' });
   }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Invalid credentials' });
+  }
+
+  const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+  res.status(200).json({ message: 'Login successful', token });
 });
 
 
@@ -166,17 +161,18 @@ router.post('/resetPassword', async (req, res) => {
 });
 
 router.post('/enroll', async (req, res) => {
-  const { name, email, phone, courseName, courseAmount, registrationAmount, password } = req.body;
+  const { name, email, phone, courseName, courseAmount, registrationAmount } = req.body;
 
   try {
     let user = await User.findOne({ email });
 
+    
     if (!user) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash('default-password', 10);
       user = new User({ fullName: name, email, phone, password: hashedPassword });
       await user.save();
-      console.log('User created:', user);
     }
+
     const existingEnrollment = await CourseEnrollment.findOne({ userId: user._id, courseName });
     if (existingEnrollment) {
       const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -192,7 +188,7 @@ router.post('/enroll', async (req, res) => {
     await newEnrollment.save();
 
     const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+    
     return res.status(200).json({ message: 'Enrollment successful', user, token });
   } catch (error) {
     console.error('Error enrolling user:', error);
@@ -201,6 +197,7 @@ router.post('/enroll', async (req, res) => {
 });
 
 
+// Check if user already exists by email
 router.get('/enroll', async (req, res) => {
   const { email } = req.query;
 
@@ -211,9 +208,9 @@ router.get('/enroll', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user) {
-      return res.status(200).json({ exists: true }); 
+      return res.status(200).json({ exists: true }); // User exists
     } else {
-      return res.status(404).json({ exists: false }); 
+      return res.status(404).json({ exists: false }); // User does not exist
     }
   } catch (error) {
     console.error('Error checking user existence:', error);
