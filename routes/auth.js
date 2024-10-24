@@ -161,14 +161,14 @@ router.post('/resetPassword', async (req, res) => {
 });
 
 router.post('/enroll', async (req, res) => {
-  const { name, email, phone, courseName, courseAmount, registrationAmount } = req.body;
+  const { name, email, phone, courseName, courseAmount, registrationAmount, password } = req.body;
 
   try {
     let user = await User.findOne({ email });
 
-    
+    // If the user does not exist, create a new one with a hashed password
     if (!user) {
-      const hashedPassword = await bcrypt.hash('default-password', 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       user = new User({ fullName: name, email, phone, password: hashedPassword });
       await user.save();
     }
@@ -188,7 +188,7 @@ router.post('/enroll', async (req, res) => {
     await newEnrollment.save();
 
     const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    
+
     return res.status(200).json({ message: 'Enrollment successful', user, token });
   } catch (error) {
     console.error('Error enrolling user:', error);
@@ -197,7 +197,6 @@ router.post('/enroll', async (req, res) => {
 });
 
 
-// Check if user already exists by email
 router.get('/enroll', async (req, res) => {
   const { email } = req.query;
 
@@ -208,9 +207,9 @@ router.get('/enroll', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user) {
-      return res.status(200).json({ exists: true }); // User exists
+      return res.status(200).json({ exists: true }); 
     } else {
-      return res.status(404).json({ exists: false }); // User does not exist
+      return res.status(404).json({ exists: false }); 
     }
   } catch (error) {
     console.error('Error checking user existence:', error);
