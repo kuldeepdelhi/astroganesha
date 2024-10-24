@@ -69,16 +69,13 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
-    // Hash the password before saving it
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ fullName, email, password: hashedPassword });
+    const newUser = new User({ fullName, email, password });
     await newUser.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error creating user', error });
   }
 });
-
 
 
 router.post('/login', async (req, res) => {
@@ -89,7 +86,7 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'User not found' });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password); // Ensure you're using bcrypt to compare the hashed password
+  const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     return res.status(400).json({ message: 'Invalid credentials' });
   }
