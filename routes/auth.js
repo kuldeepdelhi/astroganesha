@@ -81,18 +81,28 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ message: 'User not found' });
-  }
+  try {
+    // Look for the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
 
-  const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    return res.status(400).json({ message: 'Invalid credentials' });
-  }
+    // Compare the entered password with the hashed password stored in the database
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
-  const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-  res.status(200).json({ message: 'Login successful', token });
+    // Generate the JWT token
+    const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Send response with token
+    res.status(200).json({ message: 'Login successful', token });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login', error });
+  }
 });
 
 
@@ -166,7 +176,7 @@ router.post('/enroll', async (req, res) => {
   try {
     let user = await User.findOne({ email });
 
-    // If the user does not exist, create a new one with a hashed password
+    
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user = new User({ fullName: name, email, phone, password: hashedPassword });
