@@ -82,29 +82,23 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Look for the user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
 
-    // Compare the entered password with the hashed password stored in the database
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password); // Ensure the comparison is correct
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate the JWT token
     const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    // Send response with token
     res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login', error });
   }
 });
-
 
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
