@@ -87,7 +87,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'User not found' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password); // Ensure the comparison is correct
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -99,6 +99,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login', error });
   }
 });
+
 
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -170,13 +171,12 @@ router.post('/enroll', async (req, res) => {
   try {
     let user = await User.findOne({ email });
 
-    
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user = new User({ fullName: name, email, phone, password: hashedPassword });
       await user.save();
+      console.log('User created:', user);
     }
-
     const existingEnrollment = await CourseEnrollment.findOne({ userId: user._id, courseName });
     if (existingEnrollment) {
       const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
